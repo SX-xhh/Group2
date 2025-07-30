@@ -1,57 +1,52 @@
-# 投资组合项目文档
-## 项目概述
-本项目是一个投资组合系统，为投资者提供股票市场信息、个人资产展示、交易历史记录等功能。系统包含前端页面和后端接口，前端使用 HTML、JavaScript 和 Tailwind CSS 构建用户界面，后端使用 javaScript 处理数据请求和业务逻辑。
-## 功能特性
-+ 股票市场信息展示：显示股票的基本信息，如代码、名称、价格、涨跌幅等，同时提供相关股票列表。
-+ 个人资产概览：展示投资者的总资产、股票价值、债券价值和可用现金，以及持有的股票和债券详细信息。
-+ 交易历史记录：记录投资者的交易历史，包括交易 ID、股票代码、交易类型、数量、金额和交易时间等。
-+ 交易功能：支持买入和卖出操作，提供交易确认模态框，确保交易信息准确无误。
-## 项目结构
-### 前端部分
-+ index.html：包含整个前端页面的 HTML 结构和 JavaScript 代码，负责页面布局、交互逻辑和数据展示。
-### 后端部分
-+ portfolioModel.js：定义了与数据库交互的模型类 Portfolio，包含获取所有资产、股票信息、当前价格、资产走势、创建新资产和计算资产表现等方法。
-+ portfolioController.js：包含时间格式化函数，用于处理日期对象的格式化。
-### 数据库部分
-股票外部API：https://www.alphavantage.co/query'  
-获取每日股票数据。建立两张表：stock_daily和portfolio。
+# Investment Portfolio Project Documentation
+## Project Overview
+This project is an investment portfolio system that provides investors with stock market information, personal asset display, transaction history records, and other functions. The system includes front-end pages and back-end interfaces. The front-end uses HTML, JavaScript, and Tailwind CSS to build the user interface, while the back-end uses JavaScript to handle data requests and business logic.
+## Functional Features
++ Stock Market Information Display: Shows basic stock information such as code, name, price, and price change percentage, along with a list of related stocks.
++ Personal Asset Overview: Displays the investor's total assets, stock value, bond value, available cash, as well as detailed information on held stocks and bonds.
++ Transaction History Records: Records the investor's transaction history, including transaction ID, stock code, transaction type, quantity, amount, and transaction time.
++ Trading Function: Supports buying and selling operations, and provides a transaction confirmation modal box to ensure the accuracy of transaction information.
+## Project Structure
+### Front-end Part
++ index.html: Contains the HTML structure and JavaScript code of the entire front-end page, responsible for page layout, interaction logic, and data display.
+### Back-end Part
++ portfolioModel.js: Defines the model class Portfolio that interacts with the database, including methods for obtaining all assets, stock information, current prices, asset trends, creating new assets, and calculating asset performance.
++ portfolioController.js: Contains a time formatting function for formatting date objects.
+### Database Part
+Stock External API: https://www.alphavantage.co/query'
+Obtains daily stock data. Two tables are created: stock_daily and portfolio.
 
-## 技术栈
-### 前端
-+ HTML：构建页面结构。
-+ JavaScript：实现交互逻辑和数据处理。
-+ Tailwind CSS：用于快速构建响应式、美观的用户界面。
-+ Axios：用于发送 HTTP 请求，与后端进行数据交互。
-+ Chart.js：用于绘制股票价格走势图表。
+## Technology Stack
+### Front-end
++ HTML: Builds the page structure.
++ JavaScript: Implements interaction logic and data processing.
++ Tailwind CSS: Used to quickly build responsive and beautiful user interfaces.
++ Axios: Used to send HTTP requests and interact with the back-end for data exchange.
++ Chart.js: Used to draw stock price trend charts.
 ### 后端
-+ Node.js：作为服务器端运行环境。
-+ javaScript: 处理数据请求和业务逻辑
-+ MySQL：使用 MySQL 数据库存储股票信息、资产信息和交易历史记录。
-## 安装与运行
-### 前端
-确保你已经安装了 Node.js 和 npm。
-打开终端，进入项目目录。
-运行以下命令启动前端页面：
-bash
++ Node.js: Serves as the server-side runtime environment.
++ JavaScript: Handles data requests and business logic.
++ MySQL: Uses MySQL database to store stock information, asset information, and transaction history records.
+## Installation and Operation
+### Front-end
+Ensure that you have installed Node.js and npm. Open the terminal and navigate to the project directory. Run the following command to start the front-end page:
 open 2.html
-由于前端使用了 CDN 资源，直接打开 2.html 文件即可
-### 后端
-确保你已经安装了 Node.js 和 npm。
-打开终端，进入项目的后端目录。
-安装依赖
-bash
+Since the front-end uses CDN resources, you can directly open the 2.html file.
+
+### Back-end
+Ensure that you have installed Node.js and npm. Open the terminal and navigate to the back-end directory of the project. Install dependencies:
 npm install
-启动服务器
-bash
+Start the server:
 node server.js
-## 使用说明
-+ 登录与导航：打开页面后，用户可以看到侧边栏导航，包括股票市场、我的资产和交易历史三个选项。点击相应的导航链接可以切换页面。
-+ 股票市场页面：显示当前股票的基本信息和相关股票列表。用户可以点击相关股票查看其详细信息。
-+ 我的资产页面：展示投资者的资产概览和持有的股票、债券详细信息。
-+ 交易历史页面：显示投资者的交易历史记录。用户可以点击导出按钮将交易历史导出。
-+ 交易操作：在股票市场页面，用户可以选择买入或卖出操作，输入交易价格和数量，系统会自动计算交易金额。点击确认按钮后，会弹出交易确认模态框，确认无误后提交交易请求。
-## 注意事项
-确保后端服务器正常运行，否则前端页面可能无法获取数据。
-交易功能需要与后端接口进行交互，请确保后端接口的正确性和稳定性。
-## 贡献与反馈
-如果你对本项目有任何建议或发现了问题，请在项目的 GitHub 仓库中提交 Issues 或 Pull Requests。我们欢迎你的贡献和反馈！
+
+## Usage Instructions
++ Login and Navigation: After opening the page, users can see the sidebar navigation, including three options: Stock Market, My Assets, and Transaction History. Clicking on the corresponding navigation links can switch pages.
++ Stock Market Page: Displays basic information of current stocks and a list of related stocks. Users can click on related stocks to view their detailed information.
++ My Assets Page: Shows an overview of the investor's assets and detailed information on held stocks and bonds.
++ Transaction History Page: Displays the investor's transaction history records. Users can click the export button to export the transaction history.
++ Trading Operations: On the Stock Market page, users can choose to buy or sell, enter the transaction price and quantity, and the system will automatically calculate the transaction amount. After clicking the confirm button, a transaction confirmation modal box will pop up. Submit the transaction request after confirming the information is correct.
+## Notes
+Ensure that the back-end server is running normally; otherwise, the front-end page may not be able to obtain data.
+The trading function needs to interact with the back-end interface; please ensure the correctness and stability of the back-end interface.
+## Contributions and Feedback
+If you have any suggestions for this project or find any issues, please submit Issues or Pull Requests in the project's GitHub repository. We welcome your contributions and feedback!
