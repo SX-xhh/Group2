@@ -10,8 +10,8 @@
 ### 前端部分
 index.html：包含整个前端页面的 HTML 结构和 JavaScript 代码，负责页面布局、交互逻辑和数据展示。
 ### 后端部分
-portfolioModel.js：定义了与数据库交互的模型类 Portfolio，包含获取所有资产、股票信息、当前价格、资产走势、创建新资产和计算资产表现等方法。
-portfolioController.js：包含时间格式化函数，用于处理日期对象的格式化。
++ portfolioModel.js：定义了与数据库交互的模型类 Portfolio，包含获取所有资产、股票信息、当前价格、资产走势、创建新资产和计算资产表现等方法。
++ portfolioController.js：包含时间格式化函数，用于处理日期对象的格式化。
 ### 数据库部分
 股票外部API：https://www.alphavantage.co/query'  
 获取每日股票数据。建立两张表：stock_daily和portfolio。
