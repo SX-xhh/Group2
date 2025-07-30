@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股票看板</title>
+
+    <!-- 公共资源 -->
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js  "></script>
+    <script src="https://cdn.tailwindcss.com  "></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css  ">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js  "></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300  ;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 300px;
+        }
+        .delete-btn {
+            color: #F53F3F;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .delete-btn:hover {
+            color: #ff6b6b;
+            transform: scale(1.1);
+        }
+    </style>
+
+    <script>
+        tailwind.config = {
+            theme:{
+                extend:{
+                    colors:{
+                        primary:'#165DFF',
+                        secondary:'#0FC6C2',
+                        success:'#00B42A',
+                        danger:'#F53F3F',
+                        warning:'#FF7D00',
+                        info:'#86909C',
+                        dark:{100:'#4E5969',200:'#272E3B',300:'#1D2129',400:'#141414'}
+                    },
+                    fontFamily:{inter:['Inter','sans-serif']}
+                }
+            }
+        };
+    </script>
+</head>
+
+<body class="font-inter bg-dark-300 text-white min-h-screen flex">
+    <!-- 侧边栏 -->
+    <aside class="w-64 bg-dark-400 border-r border-dark-200 flex flex-col h-screen fixed left-0 top-0 z-20">
+        <!-- 用户信息 -->
+        <div class="p-6 border-b border-dark-200">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                    <i class="fas fa-user text-primary text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg">投资者</h3>
+                    <p class="text-info text-sm">ID: INV-20250729</p>
+                </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-dark-200">
+                <div class="flex justify-between text-sm"><span class="text-info">总资产</span><span class="font-medium">¥128,560.42</span></div>
+                <div class="flex justify-between text-sm mt-2"><span class="text-info">可用资金</span><span class="font-medium">¥42,315.68</span></div>
+            </div>
+        </div>
+
+        <!-- 导航 -->
+        <nav class="flex-1 overflow-y-auto py-4 space-y-1">
+            <a href="#" id="nav-market" class="flex items-center px-6 py-3 text-primary bg-dark-300 border-r-4 border-primary"><i class="fas fa-chart-line w-5 text-center mr-3"></i>股票市场</a>
+            <a href="#" id="nav-assets" class="flex items-center px-6 py-3 text-gray-400 hover:bg-dark-300 hover:text-white transition-colors"><i class="fas fa-briefcase w-5 text-center mr-3"></i>我的资产</a>
+            <a href="#" id="nav-history" class="flex items-center px-6 py-3 text-gray-400 hover:bg-dark-300 hover:text-white transition-colors"><i class="fas fa-history w-5 text-center mr-3"></i>交易历史</a>
+        </nav>
+
+        <div class="p-4 border-t border-dark-200">
+            <button class="w-full bg-dark-200 hover:bg-dark-100 text-white py-2 rounded-lg flex items-center justify-center"><i class="fas fa-question-circle mr-2"></i>帮助中心</button>
+        </div>
+    </aside>
+
+    <!-- 主区域 -->
+    <main class="flex-1 ml-64 flex flex-col">
+        <!-- 页面容器 -->
+        <!-- 1. 股票市场 -->
+        <div id="page-market" class="flex-1 overflow-y-auto p-6">
+            <!-- 股票信息 -->
+            <div class="bg-dark-400 rounded-xl p-6 mb-6">
+                <div class="flex flex-wrap items-center justify-between">
+                    <div>
+                        <div class="flex items-center">
+                            <h1 class="text-2xl font-bold mr-3" id="stockName">苹果公司</h1>
+                            <span class="text-info" id="stockCode">AAPL</span>
+                            <span class="ml-3 bg-success/20 text-success text-xs px-2 py-0.5 rounded-full" id="stockChangePercent">+2.45%</span>
+                        </div>
+                        <div class="mt-2 flex items-center">
+                            <span class="text-3xl font-bold" id="stockPrice">¥328.50</span>
+                            <span class="ml-3 text-success" id="stockChange">+7.95</span>
+                            <span class="ml-2 text-info" id="updateTime">今日 09:30:00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                    <div class="bg-dark-300 p-4 rounded-lg"><div class="text-info text-sm">今开</div><div class="text-lg font-medium" id="stockOpen">¥321.50</div></div>
+                    <div class="bg-dark-300 p-4 rounded-lg"><div class="text-info text-sm">昨闭</div><div class="text-lg font-medium" id="stockPrevClose">¥320.55</div></div>
+                    <div class="bg-dark-300 p-4 rounded-lg"><div class="text-info text-sm">最高</div><div class="text-lg font-medium text-success" id="stockHigh">¥329.80</div></div>
+                    <div class="bg-dark-300 p-4 rounded-lg"><div class="text-info text-sm">最低</div><div class="text-lg font-medium text-danger" id="stockLow">¥319.20</div></div>
+                    <div class="bg-dark-300 p-4 rounded-lg"><div class="text-info text-sm">成交量</div><div class="text-lg font-medium" id="stockVolume">23.45M</div></div>
+                </div>
+            </div>
+
+            <!-- 图表+交易 -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-dark-400 rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-semibold">价格走势</h2>
+                        <button class="bg-primary text-white px-3 py-1 rounded-md text-sm">日</button>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="stockChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-dark-400 rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4">快速交易</h2>
+
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <button id="btn-buy" class="bg-success/20 text-success py-2 rounded-lg border border-success/30">买入</button>
+                        <button id="btn-sell" class="bg-dark-300 text-white py-2 rounded-lg border border-dark-200">卖出</button>
+                    </div>
+
+                    <!-- 新增时间日期选择 -->
+                    <div class="mb-3">
+                        <label class="block text-info mb-1">交易时间</label>
+                        <div class="relative">
+                            <input id="trade-date" type="datetime-local" class="bg-dark-300 border border-dark-200 rounded-lg py-2 px-4 w-full">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="block text-info mb-1">交易价格</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2">¥</span>
+                            <input id="trade-price" type="number" value="328.50" step="0.01" class="bg-dark-300 border border-dark-200 rounded-lg py-2 pl-8 pr-4 w-full">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="block text-info mb-1">交易数量</label>
+                        <input id="trade-qty" type="number" placeholder="请输入数量" class="bg-dark-300 border border-dark-200 rounded-lg py-2 px-4 w-full">
+                        <div class="flex justify-between text-sm mt-1">
+                            <span>可用资金: ¥42,315.68</span>
+                            <span id="affordable">可买: 128股</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-info mb-1">订单金额</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2">¥</span>
+                            <input id="trade-amount" type="number" placeholder="0.00" readonly class="bg-dark-300 border border-dark-200 rounded-lg py-2 pl-8 pr-4 w-full">
+                        </div>
+                    </div>
+
+                    <button id="btn-confirm" class="w-full bg-success hover:bg-success/90 text-white py-3 rounded-lg font-medium">确认买入</button>
+                </div>
+            </div>
+
+            <!-- 相关股票 -->
+            <div class="bg-dark-400 rounded-xl p-6 mt-6">
+                <h2 class="text-xl font-semibold mb-4">相关股票</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="relatedStocks"></div>
+            </div>
+        </div>
+
+        <!-- 2. 我的资产 -->
+        <div id="page-assets" class="flex-1 overflow-y-auto p-6 hidden">
+            <div class="bg-dark-400 rounded-xl p-6 mb-6 shadow-lg">
+                <h2 class="text-xl font-semibold mb-6">资产概览</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="bg-dark-300 p-4 rounded-lg"><div class="text-info text-sm">总资产</div><div class="text-2xl font-bold">¥128,560.42</div><div class="text-success text-sm mt-1">+2.45%</div></div>
+                    <div class="bg-dark-300 p-4 rounded-lg"><div class="text-info text-sm">股票价值</div><div class="text-2xl font-bold">¥86,244.74</div><div class="text-success text-sm mt-1">+3.12%</div></div>
+                    <div class="bg-dark-300 p-4 rounded-lg"><div class="text-info text-sm">债券价值</div><div class="text-2xl font-bold">¥15,000.00</div><div class="text-success text-sm mt-1">+0.87%</div></div>
+                    <div class="bg-dark-300 p-4 rounded-lg"><div class="text-info text-sm">可用现金</div><div class="text-2xl font-bold">¥42,315.68</div></div>
+                </div>
+            </div>
+
+            <div class="bg-dark-400 rounded-xl p-6 mb-6 shadow-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold">我的股票</h2>
+                    <button class="bg-dark-300 hover:bg-dark-200 text-white px-3 py-1 rounded-md text-sm transition-colors"><i class="fas fa-download mr-1"></i>导出</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-dark-200">
+                        <thead>
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">代码</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">数量</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">成本价</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">当前价</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">盈亏</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-dark-200" id="page-assets-tbody">
+                        <tr class="hover:bg-dark-300 transition-colors"><td class="px-6 py-4 whitespace-nowrap text-sm">00700.HK</td><td class="px-6 py-4 whitespace-nowrap text-sm">200</td><td class="px-6 py-4 whitespace-nowrap text-sm">¥318.55</td><td class="px-6 py-4 whitespace-nowrap text-sm">¥328.50</td><td class="px-6 py-4 whitespace-nowrap text-sm text-success">+¥1,990.00 (+3.12%)</td></tr>
+                        <tr class="hover:bg-dark-300 transition-colors"><td class="px-6 py-4 whitespace-nowrap text-sm">BABA.US</td><td class="px-6 py-4 whitespace-nowrap text-sm">100</td><td class="px-6 py-4 whitespace-nowrap text-sm">¥87.50</td><td class="px-6 py-4 whitespace-nowrap text-sm">¥89.65</td><td class="px-6 py-4 whitespace-nowrap text-sm text-success">+¥215.00 (+2.46%)</td></tr>
+                        <tr class="hover:bg-dark-300 transition-colors"><td class="px-6 py-4 whitespace-nowrap text-sm">03690.HK</td><td class="px-6 py-4 whitespace-nowrap text-sm">150</td><td class="px-6 py-4 whitespace-nowrap text-sm">¥152.30</td><td class="px-6 py-4 whitespace-nowrap text-sm">¥156.30</td><td class="px-6 py-4 whitespace-nowrap text-sm text-success">+¥600.00 (+2.60%)</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-dark-400 rounded-xl p-6 shadow-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold">我的债券</h2>
+                    <button class="bg-dark-300 hover:bg-dark-200 text-white px-3 py-1 rounded-md text-sm transition-colors"><i class="fas fa-download mr-1"></i>导出</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-dark-200">
+                        <thead>
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">代码</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">数量</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">面值</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">当前价</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">利率</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">到期日</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-dark-200">
+                        <tr class="hover:bg-dark-300 transition-colors"><td class="px-6 py-4 whitespace-nowrap text-sm">202501</td><td class="px-6 py-4 whitespace-nowrap text-sm">100</td><td class="px-6 py-4 whitespace-nowrap text-sm">¥1,000.00</td><td class="px-6 py-4 whitespace-nowrap text-sm">¥1,008.75</td><td class="px-6 py-4 whitespace-nowrap text-sm">3.25%</td><td class="px-6 py-4 whitespace-nowrap text-sm">2025-12-31</td></tr>
+                        <tr class="hover:bg-dark-300 transition-colors"><td class="px-6 py-4 whitespace-nowrap text-sm">202502</td><td class="px-6 py-4 whitespace-nowrap text-sm">50</td><td class="px-6 py-4 whitespace-nowrap text-sm">¥1,000.00</td><td class="px-6 py-4 whitespace-nowrap text-sm">¥995.60</td><td class="px-6 py-4 whitespace-nowrap text-sm">4.50%</td><td class="px-6 py-4 whitespace-nowrap text-sm">2026-06-30</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. 交易历史 -->
+        <div id="page-history" class="flex-1 overflow-y-auto p-6 hidden">
+            <div class="bg-dark-400 rounded-xl p-6 shadow-lg">
+                <div class="flex flex-wrap justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold">交易历史</h2>
+                    <button class="bg-dark-300 hover:bg-dark-200 text-white px-3 py-2 rounded-lg text-sm transition-colors"><i class="fas fa-download mr-1"></i>导出</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-dark-200">
+                        <thead>
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">交易ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">代码</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">类型</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">价格</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">数量</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">金额</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">时间</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">操作</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-dark-200"  id="page-history-tbody">
+                        <tr class="hover:bg-dark-300 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">#TRX-20250729-001</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">00700.HK</td>
+                            <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium bg-success/20 text-success rounded-full">买入</span></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">¥318.55</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">200</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">¥63,710.00</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">2025-07-29 09:15:30</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <button class="delete-btn" data-id="#TRX-20250729-001">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-dark-300 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">#TRX-20250728-002</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">BABA.US</td>
+                            <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium bg-success/20 text-success rounded-full">买入</span></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">¥87.50</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">100</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">¥8,750.00</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">2025-07-28 14:30:15</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <button class="delete-btn" data-id="#TRX-20250728-002">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-dark-300 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">#TRX-20250727-003</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">03690.HK</td>
+                            <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium bg-success/20 text-success rounded-full">买入</span></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">¥152.30</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">150</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">¥22,845.00</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">2025-07-27 10:45:22</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <button class="delete-btn" data-id="#TRX-20250727-003">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- 分页 -->
+                <div class="flex items-center justify-between mt-6">
+                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div><p class="text-sm text-info">显示第 <span class="font-medium">1</span> 到 <span class="font-medium">4</span> 条，共 <span class="font-medium">12</span> 条记录</p></div>
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                                <button class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-dark-200 bg-dark-300 text-sm text-info hover:bg-dark-200"><i class="fas fa-chevron-left text-xs"></i></button>
+                                <button class="z-10 bg-primary border-primary text-white relative inline-flex items-center px-4 py-2 border text-sm">1</button>
+                                <button class="bg-dark-300 border-dark-200 text-info hover:bg-dark-200 relative inline-flex items-center px-4 py-2 border text-sm">2</button>
+                                <button class="bg-dark-300 border-dark-200 text-info hover:bg-dark-200 relative inline-flex items-center px-4 py-2 border text-sm">3</button>
+                                <span class="relative inline-flex items-center px-4 py-2 border border-dark-200 bg-dark-300 text-sm text-info">...</span>
+                                <button class="bg-dark-300 border-dark-200 text-info hover:bg-dark-200 relative inline-flex items-center px-4 py-2 border text-sm">5</button>
+                                <button class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-dark-200 bg-dark-300 text-sm text-info hover:bg-dark-200"><i class="fas fa-chevron-right text-xs"></i></button>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 交易确认模态框 -->
+    <div id="confirmModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center">
+        <div class="bg-dark-400 rounded-xl p-6 w-full max-w-md border border-dark-200">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold" id="modalTitle">确认买入</h3>
+                <button id="closeModal" class="text-info hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4 mb-6">
+                <div class="flex justify-between">
+                    <span class="text-info">股票名称</span>
+                    <span id="modalStockName">腾讯控股</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-info">股票代码</span>
+                    <span id="modalStockCode">00700.HK</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-info">交易类型</span>
+                    <span id="modalTradeType">买入</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-info">交易价格</span>
+                    <span id="modalPrice">¥328.50</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-info">交易数量</span>
+                    <span id="modalQty">100</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-info">交易时间</span>
+                    <span id="modalTime">2025-07-30 10:00:00</span>
+                </div>
+                <div class="pt-4 border-t border-dark-200 flex justify-between">
+                    <span class="font-medium">总金额</span>
+                    <span class="font-bold text-lg" id="modalTotal">¥32,850.00</span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <button id="cancelTrade" class="bg-dark-300 hover:bg-dark-200 text-white py-2 rounded-lg">取消</button>
+                <button id="confirmTrade" class="bg-success hover:bg-success/90 text-white py-2 rounded-lg">确认交易</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认模态框 -->
+    <div id="deleteConfirmModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center">
+        <div class="bg-dark-400 rounded-xl p-6 w-full max-w-md border border-dark-200">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">确认删除</h3>
+                <button id="closeDeleteModal" class="text-info hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="mb-6">
+                <p>您确定要删除这条交易记录吗？此操作不可撤销。</p>
+                <p class="text-info mt-2" id="deleteRecordId">交易ID: #TRX-20250729-001</p>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <button id="cancelDelete" class="bg-dark-300 hover:bg-dark-200 text-white py-2 rounded-lg">取消</button>
+                <button id="confirmDelete" class="bg-danger hover:bg-danger/90 text-white py-2 rounded-lg">确认删除</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let chart;
+        let currentStockCode = 'AAPL'; // 默认股票代码
+        let currentTradeId = ''; // 当前要删除的交易ID
+        
+        // 后端接口地址
+        const API = {
+            stockDetail: 'http://localhost:3000/api/portfolio/stock/', // 股票详情接口，使用时拼接股票代码
+            priceTrend: 'http://localhost:3000/api/portfolio/' // 价格走势接口，使用时拼接股票代码
+        };
+
+        // 从后端拉取交易历史
+        async function fetchHistory() {
+            try {
+                const res = await axios.get('http://localhost:3000/api/portfolio/pf');
+                return res.data.data || res.data;
+            } catch (e) {
+                console.error('获取交易历史失败', e);
+                return [];
+            }
+        }
+        
+        function renderHistory(list) {
+            const tbody = document.getElementById('page-history-tbody');
+            tbody.innerHTML = list.map(h => `
+                <tr class="hover:bg-dark-300 transition-colors">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">${h.id}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">${h.symbol}</td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 py-1 text-xs font-medium ${h.type==='buy'?'bg-success/20 text-success':'bg-danger/20 text-danger'} rounded-full">${h.type}</span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">¥${Number(h.rmb_amount).toFixed(2)}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">${h.quantity}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">¥${Number(h.amount).toFixed(2)}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">${h.date}</td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <button class="delete-btn" data-id="${h.id}">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                  </td>
+                </tr>
+            `).join('');
+            
+            // 为删除按钮添加事件
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', handleDeleteClick);
+            });
+        }
+        // 获取后端当前时间并更新页面
+        async function updateTimeFromServer() {
+            try {
+            const response = await axios.get('http://localhost:3000/api/portfolio/currentTime');
+            const serverTime = response.data.currentTime;
+            // 格式化时间显示（如：今日 09:30）
+            const timeParts = serverTime.split(' ');
+            document.getElementById('updateTime').textContent = `今日 ${timeParts[1]}`;
+            } catch (error) {
+            console.error('获取服务器时间失败:', error);
+            }
+        }
+
+        // 从后端拉取资产数据
+        async function fetchAssets() {
+            try {
+            const res = await axios.get('http://localhost:3000/api/portfolio/myAssets');
+            // 如果后端返回 {data:[...]} 结构
+            return res.data.data || res.data;
+            } catch (e) {
+            console.error('获取资产失败', e);
+            return [];
+            }
+        }
+
+        function renderAssets(list) {
+            const tbody = document.getElementById('page-assets-tbody');
+            tbody.innerHTML = list.map(h => `
+                <tr class="hover:bg-dark-300 transition-colors">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">${h.symbol}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">${h.currentQuantity}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">¥${h.currentPrice}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">¥${h.currentPrice}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">¥${h.pl}</td>
+                </tr>
+            `).join('');
+          }
+
+          document.addEventListener('DOMContentLoaded', async () => {
+           
+            show('page-market');                      
+            const assetsData = await fetchAssets();
+            renderAssets(assetsData);
+        });
+
+        // 获取股票详情
+        async function fetchStockDetail(stockCode) {
+            try {
+                const response = await axios.get(API.stockDetail + stockCode);
+                return response.data;
+            } catch (error) {
+                console.error(`获取股票${stockCode}详情失败:`, error);
+                return null;
+            }
+        }
+
+        // 获取价格走势数据
+        async function fetchPriceTrend(stockCode) {
+            try {
+                const response = await axios.get(API.priceTrend + stockCode);
+                // 确保返回的是数组
+                return Array.isArray(response.data) ? response.data : [response.data];
+            } catch (error) {
+                console.error(`获取股票${stockCode}价格走势失败:`, error);
+                return [];
+            }
+        }
+
+        // 格式化日期时间
+        function formatDateTime(isoString) {
+            const date = new Date(isoString);
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const seconds = date.getSeconds().toString().padStart(2, '0');
+            return `今日 ${hours}:${minutes}:${seconds}`;
+        }
+
+        // 格式化成交量
+        function formatVolume(volume) {
+            if (volume >= 1000000) {
+                return (volume / 1000000).toFixed(2) + 'M';
+            } else if (volume >= 1000) {
+                return (volume / 1000).toFixed(2) + 'K';
+            }
+            return volume.toString();
+        }
+
+        // 加载并显示股票详情
+        async function loadStockDetail(stockCode) {
+            currentStockCode = stockCode;
+            
+            // 获取股票详情
+            const stock = await fetchStockDetail(stockCode);
+            if (!stock) return;
+            
+            // 计算涨跌幅
+            const open = parseFloat(stock.open);
+            const close = parseFloat(stock.close);
+            const change = close - open;
+            const changePercent = (change / open) * 100;
+            
+            // 更新股票信息
+            document.getElementById('stockName').textContent = getStockName(stockCode);
+            <!-- document.getElementById('stockCode').textContent = stock.symbol; -->
+            document.getElementById('stockCode').textContent = stockCode;
+            document.getElementById('stockPrice').textContent = `¥${close.toFixed(2)}`;
+            document.getElementById('stockChange').textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}`;
+            document.getElementById('stockChangePercent').textContent = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
+            document.getElementById('updateTime').textContent = formatDateTime(stock.last_updated);
+            
+            // 更新涨跌样式
+            const changeEl = document.getElementById('stockChange');
+            const changePercentEl = document.getElementById('stockChangePercent');
+            if (change >= 0) {
+                changeEl.className = 'ml-3 text-success';
+                changePercentEl.className = 'ml-3 bg-success/20 text-success text-xs px-2 py-0.5 rounded-full';
+            } else {
+                changeEl.className = 'ml-3 text-danger';
+                changePercentEl.className = 'ml-3 bg-danger/20 text-danger text-xs px-2 py-0.5 rounded-full';
+            }
+            
+            // 更新其他信息
+            document.getElementById('stockOpen').textContent = `¥${open.toFixed(2)}`;
+            document.getElementById('stockPrevClose').textContent = `¥${open.toFixed(2)}`; // 假设昨收价等于开盘价
+            document.getElementById('stockHigh').textContent = `¥${parseFloat(stock.high).toFixed(2)}`;
+            document.getElementById('stockLow').textContent = `¥${parseFloat(stock.low).toFixed(2)}`;
+            document.getElementById('stockVolume').textContent = formatVolume(stock.volume);
+            
+            // 更新交易价格
+            document.getElementById('trade-price').value = close.toFixed(2);
+            calcAmount();
+            
+            // 高亮当前选中的股票
+            document.querySelectorAll('#relatedStocks > div').forEach(el => {
+                el.classList.remove('border-l-4', 'border-primary', 'bg-primary/10');
+            });
+            document.querySelector(`[data-code="${stockCode}"]`)?.classList.add('border-l-4', 'border-primary', 'bg-primary/10');
+            
+            // 绘制价格走势图表
+            await drawChart(stockCode);
+        }
+
+        // 绘制价格走势图表
+        async function drawChart(stockCode) {
+            const trendData = await fetchPriceTrend(stockCode);
+            if (trendData.length === 0) return;
+            
+            // 销毁已有图表
+            if (chart) chart.destroy();
+            
+            // 处理图表数据
+            const labels = trendData.map(item => {
+                const date = new Date(item.date);
+                return `${date.getMonth() + 1}/${date.getDate()}`;
+            });
+            const data = trendData.map(item => parseFloat(item.high));
+            const isUp = data[data.length - 1] >= data[0];
+            
+            // 创建新图表
+            chart = new Chart(document.getElementById('stockChart'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: `${getStockName(stockCode)} (${stockCode})`,
+                        data: data,
+                        borderColor: isUp ? '#00B42A' : '#F53F3F',
+                        backgroundColor: isUp ? 'rgba(0,180,42,.1)' : 'rgba(245,63,63,.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#86909C' } },
+                        y: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#86909C' } }
+                    },
+                    plugins: { legend: { labels: { color: '#fff' } } }
+                }
+            });
+        }
+
+        // 获取股票名称（实际项目中可从接口获取）
+        function getStockName(stockCode) {
+            const stockNames = {
+                'AAPL': '苹果公司',
+                'MSFT': '微软公司'
+                
+            };
+            return stockNames[stockCode] || stockCode;
+        }
+
+        // 渲染相关股票
+        async function renderRelatedStocks() {
+            // 相关股票列表（实际项目中可从接口获取）
+            const relatedStockCodes = ['AAPL', 'MSFT'];
+            const box = document.getElementById('relatedStocks');
+            box.innerHTML = '';
+            
+            // 为每个相关股票获取数据并渲染
+            for (const code of relatedStockCodes) {
+                const stock = await fetchStockDetail(code);
+                if (!stock) continue;
+                
+                // 计算涨跌幅
+                const open = parseFloat(stock.open);
+                const close = parseFloat(stock.close);
+                const change = close - open;
+                const changePercent = (change / open) * 100;
+                
+                const div = document.createElement('div');
+                div.dataset.code = code;
+                div.className = 'bg-dark-300 p-4 rounded-lg card-hover cursor-pointer';
+                div.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div><h3 class="font-medium">${getStockName(code)}</h3><p class="text-info text-sm">${code}</p></div>
+                        <div class="text-right">
+                            <p class="font-medium">¥${close.toFixed(2)}</p>
+                            <p class="${change >= 0 ? 'text-success' : 'text-danger'} text-sm">${change >= 0 ? '+' : ''}${changePercent.toFixed(2)}%</p>
+                        </div>
+                    </div>`;
+                div.onclick = () => loadStockDetail(code);
+                box.appendChild(div);
+            }
+        }
+
+        /* ---------- 页面切换 ---------- */
+        function show(pageId) {
+            ['page-market', 'page-assets', 'page-history'].forEach(p => document.getElementById(p).classList.toggle('hidden', p !== pageId));
+            ['nav-market', 'nav-assets', 'nav-history'].forEach(n => {
+                const el = document.getElementById(n);
+                const active = el.id === 'nav-' + pageId.split('-')[1];
+                el.classList.toggle('text-primary', active);
+                el.classList.toggle('bg-dark-300', active);
+                el.classList.toggle('border-r-4', active);
+                el.classList.toggle('border-primary', active);
+                el.classList.toggle('text-gray-400', !active);
+            });
+            if (pageId === 'page-market') {
+                setTimeout(() => drawChart(currentStockCode), 50);
+            }
+        }
+
+        /* ---------- 交互 ---------- */
+        // 全局变量存储当前交易类型（买入/卖出）
+        let currentTradeType = 'buy';
+
+        // 交易
+        function setTradeType(type) {
+            currentTradeType = type; // 记录当前交易类型
+            const isBuy = type === 'buy';
+            document.getElementById('btn-buy').className = isBuy ? 'bg-success/20 text-success py-2 rounded-lg border border-success/30' : 'bg-dark-300 text-white py-2 rounded-lg border border-dark-200';
+            document.getElementById('btn-sell').className = !isBuy ? 'bg-danger/20 text-danger py-2 rounded-lg border border-danger/30' : 'bg-dark-300 text-white py-2 rounded-lg border border-dark-200';
+            document.getElementById('btn-confirm').textContent = isBuy ? '确认买入' : '确认卖出';
+            document.getElementById('btn-confirm').className = `w-full ${isBuy ? 'bg-success' : 'bg-danger'} hover:${isBuy ? 'bg-success/90' : 'bg-danger/90'} text-white py-3 rounded-lg font-medium`;
+        }
+        
+        function calcAmount() {
+            const price = +document.getElementById('trade-price').value || 0;
+            const qty = +document.getElementById('trade-qty').value || 0;
+            document.getElementById('trade-amount').value = (price * qty).toFixed(2);
+            const funds = 42315.68;
+            document.getElementById('affordable').textContent = `可买: ${Math.floor(funds / price)}股`;
+        }
+
+        // 显示确认模态框
+        function showConfirmModal() {
+            // 验证交易数量
+            const qty = +document.getElementById('trade-qty').value || 0;
+            if (qty <= 0) {
+                alert('请输入有效的交易数量');
+                return;
+            }
+
+            // 验证交易时间
+            const tradeDate = document.getElementById('trade-date').value;
+            if (!tradeDate) {
+                alert('请选择交易时间');
+                return;
+            }
+            
+            // 格式化交易时间
+            const formattedDate = new Date(tradeDate).toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            }).replace(',', '');
+
+            // 获取当前股票信息
+            const stockCode = document.getElementById('stockCode').textContent;
+            const stockName = document.getElementById('stockName').textContent;
+            const price = +document.getElementById('trade-price').value || 0;
+            const total = (price * qty).toFixed(2);
+
+            // 填充模态框数据
+            document.getElementById('modalTitle').textContent = currentTradeType === 'buy' ? '确认买入' : '确认卖出';
+            document.getElementById('modalStockName').textContent = stockName;
+            document.getElementById('modalStockCode').textContent = stockCode;
+            document.getElementById('modalTradeType').textContent = currentTradeType === 'buy' ? '买入' : '卖出';
+            document.getElementById('modalPrice').textContent = `¥${price.toFixed(2)}`;
+            document.getElementById('modalQty').textContent = qty;
+            document.getElementById('modalTime').textContent = formattedDate;
+            document.getElementById('modalTotal').textContent = `¥${total}`;
+            document.getElementById('modalTotal').className = `font-bold text-lg ${currentTradeType === 'buy' ? 'text-success' : 'text-danger'}`;
+
+            // 显示模态框
+            document.getElementById('confirmModal').classList.remove('hidden');
+            document.getElementById('confirmModal').classList.add('flex');
+        }
+
+        // 隐藏确认模态框
+        function hideConfirmModal() {
+            document.getElementById('confirmModal').classList.add('hidden');
+            document.getElementById('confirmModal').classList.remove('flex');
+        }
+
+        function handleTradeConfirm() {
+            // 1. 收集交易数据（从页面提取 + 计算）
+            const stockCode = document.getElementById('stockCode').textContent.trim(); // 股票代码：如 00700.HK
+            const price = parseFloat(document.getElementById('trade-price').value);    // 交易价格
+            const qty = parseInt(document.getElementById('trade-qty').value, 10);      // 交易数量
+            const tradeDate = document.getElementById('trade-date').value;             // 交易时间
+            const tradeType = currentTradeType;                                       // 'buy' 或 'sell'
+            const rmbAmount = price * qty;                                            // 交易总金额（人民币）
+         
+            // 2. 前端基础校验（防止无效输入）
+            if (isNaN(price) || price <= 0 || isNaN(qty) || qty <= 0 || !tradeDate) {
+              alert('请输入有效的价格、数量和交易时间！');
+              return;
+            }
+         
+            // 3. 构造后端需要的请求体（与后端 `createItem` 参数对齐）
+            const requestData = {
+              symbol: stockCode,        // 股票代码
+              asset_type: 'stock',      // 资产类型（固定为股票，可根据实际场景扩展）
+              type: tradeType,          // 交易类型：buy/sell
+              quantity: qty,            // 交易数量
+              rmb_amount: rmbAmount,    // 交易金额（人民币）
+              date: new Date(tradeDate).toISOString() // 交易时间
+            };
+         
+            // 4. 调用后端 API（替换为实际接口地址，如 http://localhost:3000/api/portfolio）
+            axios.post('http://localhost:3000/api/portfolio/handle', requestData)
+              .then(response => {
+                // 5. 处理成功响应（假设后端返回 { message: '...' }）
+                alert(`交易成功：${response.data.response.message}`);
+                // 【可选】刷新交易历史（如果页面需要实时更新）
+                fetchHistory().then(renderHistory);
+                // 关闭模态框 + 重置表单
+                hideConfirmModal();
+                document.getElementById('trade-qty').value = '';
+                document.getElementById('trade-amount').value = '0.00';
+                document.getElementById('trade-date').value = '';
+              })
+              .catch(error => {
+                // 6. 处理失败响应（网络错误、参数错误等）
+                console.error('交易失败：', error); // 控制台打印详细错误
+                alert('交易失败！请检查网络或输入数据是否正确');
+                hideConfirmModal();
+              });
+          }
+
+        // 处理删除按钮点击
+        function handleDeleteClick(e) {
+            currentTradeId = e.currentTarget.getAttribute('data-id');
+            document.getElementById('deleteRecordId').textContent = `交易ID: ${currentTradeId}`;
+            
+            // 显示删除确认模态框
+            document.getElementById('deleteConfirmModal').classList.remove('hidden');
+            document.getElementById('deleteConfirmModal').classList.add('flex');
+        }
+
+        // 隐藏删除确认模态框
+        function hideDeleteConfirmModal() {
+            document.getElementById('deleteConfirmModal').classList.add('hidden');
+            document.getElementById('deleteConfirmModal').classList.remove('flex');
+            currentTradeId = '';
+        }
+
+        // 确认删除交易记录 - 修改为使用正确的删除接口
+        function confirmDeleteRecord() {
+            if (!currentTradeId) return;
+            
+            // 调用后端API删除记录（使用用户提供的正确接口地址）
+            axios.delete(`http://localhost:3000/api/portfolio/pf/${currentTradeId}`)
+                .then(response => {
+                    alert('交易记录已成功删除');
+                    // 重新加载交易历史
+                    fetchHistory().then(renderHistory);
+                    hideDeleteConfirmModal();
+                })
+                .catch(error => {
+                    console.error('删除交易记录失败：', error);
+                    alert('删除失败，请重试');
+                    hideDeleteConfirmModal();
+                });
+        }
+
+
+        /* ---------- 初始化 ---------- */
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 设置默认交易时间为当前时间
+            const now = new Date();
+            // 格式化时间为datetime-local所需格式（YYYY-MM-DDThh:mm）
+            const dateTimeFormat = now.toISOString().slice(0, 16);
+            document.getElementById('trade-date').value = dateTimeFormat;
+            
+            // 导航事件
+            ['nav-market', 'nav-assets', 'nav-history'].forEach(n => {
+                document.getElementById(n).addEventListener('click', e => {
+                    e.preventDefault();
+                    show(n.replace('nav-', 'page-'));
+                });
+            });
+            // 新增：获取并显示后端时间
+            await updateTimeFromServer();
+            // 每60秒刷新一次时间
+            setInterval(updateTimeFromServer, 3000);
+            
+            // 交易类型切换
+            document.getElementById('btn-buy').addEventListener('click', () => setTradeType('buy'));
+            document.getElementById('btn-sell').addEventListener('click', () => setTradeType('sell'));
+            
+            // 价格和数量输入事件
+            document.getElementById('trade-price').addEventListener('input', calcAmount);
+            document.getElementById('trade-qty').addEventListener('input', calcAmount);
+            
+            // 确认按钮点击事件
+            document.getElementById('btn-confirm').addEventListener('click', showConfirmModal);
+            
+            // 模态框事件
+            document.getElementById('closeModal').addEventListener('click', hideConfirmModal);
+            document.getElementById('cancelTrade').addEventListener('click', hideConfirmModal);
+            document.getElementById('confirmTrade').addEventListener('click', handleTradeConfirm);
+            
+            // 点击模态框外部关闭
+            document.getElementById('confirmModal').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('confirmModal')) {
+                    hideConfirmModal();
+                }
+            });
+            
+            // 删除模态框事件
+            document.getElementById('closeDeleteModal').addEventListener('click', hideDeleteConfirmModal);
+            document.getElementById('cancelDelete').addEventListener('click', hideDeleteConfirmModal);
+            document.getElementById('confirmDelete').addEventListener('click', confirmDeleteRecord);
+            
+            // 点击删除模态框外部关闭
+            document.getElementById('deleteConfirmModal').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('deleteConfirmModal')) {
+                    hideDeleteConfirmModal();
+                }
+            });
+            
+            // 加载股票数据
+            await loadStockDetail(currentStockCode);
+            
+            // 渲染相关股票
+            await renderRelatedStocks();
+            
+            // 加载交易历史
+            const historyData = await fetchHistory();
+            renderHistory(historyData);
+            
+            show('page-market');
+        });
+    </script>
+</body>
+</html>
