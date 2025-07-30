@@ -8,7 +8,7 @@
 + 交易功能：支持买入和卖出操作，提供交易确认模态框，确保交易信息准确无误。
 ## 项目结构
 ### 前端部分
-index.html：包含整个前端页面的 HTML 结构和 JavaScript 代码，负责页面布局、交互逻辑和数据展示。
++ index.html：包含整个前端页面的 HTML 结构和 JavaScript 代码，负责页面布局、交互逻辑和数据展示。
 ### 后端部分
 + portfolioModel.js：定义了与数据库交互的模型类 Portfolio，包含获取所有资产、股票信息、当前价格、资产走势、创建新资产和计算资产表现等方法。
 + portfolioController.js：包含时间格式化函数，用于处理日期对象的格式化。
@@ -24,9 +24,9 @@ index.html：包含整个前端页面的 HTML 结构和 JavaScript 代码，负�
 + Axios：用于发送 HTTP 请求，与后端进行数据交互。
 + Chart.js：用于绘制股票价格走势图表。
 ### 后端
-Node.js：作为服务器端运行环境。
-javaScript: 处理数据请求和业务逻辑
-MySQL：使用 MySQL 数据库存储股票信息、资产信息和交易历史记录。
++ Node.js：作为服务器端运行环境。
++ javaScript: 处理数据请求和业务逻辑
++ MySQL：使用 MySQL 数据库存储股票信息、资产信息和交易历史记录。
 ## 安装与运行
 ### 前端
 确保你已经安装了 Node.js 和 npm。
