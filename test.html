@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股票看板</title>
+
+    <!-- 公共资源 -->
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js  "></script>
+    <script src="https://cdn.tailwindcss.com  "></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css  ">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js  "></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300  ;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 300px;
+        }
+    </style>
+
+    <script>
+        tailwind.config = {
+            theme:{
+                extend:{
+                    colors:{
+                        primary:'#165DFF',
+                        secondary:'#0FC6C2',
+                        success:'#00B42A',
+                        danger:'#F53F3F',
+                        warning:'#FF7D00',
+                        info:'#86909C',
+                        dark:{100:'#4E5969',200:'#272E3B',300:'#1D2129',400:'#141414'}
+                    },
+                    fontFamily:{inter:['Inter','sans-serif']}
+                }
+            }
+        };
+    </script>
+</head>
+
+<body class="font-inter bg-dark-300 text-white min-h-screen flex">
+    <!-- 侧边栏 -->
+    <aside class="w-64 bg-dark-400 border-r border-dark-200 flex flex-col h-screen fixed left-0 top-0 z-20">
+        <!-- 用户信息 -->
+        <div class="p-6 border-b border-dark-200">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                    <i class="fas fa-user text-primary text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg">投资者</h3>
+                    <p class="text-info text-sm">ID: INV-20250729</p>
+                </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-dark-200">
+                <div class="flex justify-between text-sm"><span class="text-info">总资产</span><span class="font-medium">¥128,560.42</span></div>
+                <div class="flex justify-between text-sm mt-2"><span class="text-info">可用资金</span><span class="font-medium">¥42,315.68</span></div>
+            </div>
+        </div>
+
+        <!-- 导航 -->
+        <nav class="flex-1 overflow-y-auto py-4 space-y-1">
+            <a href="#" id="nav-market" class="flex items-center px-6 py-3 text-primary bg-dark-300 border-r-4 border-primary"><i class="fas fa-chart-line w-5 text-center mr-3"></i>股票市场</a>
+            <a href="#" id="nav-assets" class="flex items-center px-6 py-3 text-gray-400 hover:bg-dark-300 hover:text-white transition-colors"><i class="fas fa-briefcase w-5 text-center mr-3"></i>我的资产</a>
+            <a href="#" id="nav-history" class="flex items-center px-6 py-3 text-gray-400 hover:bg-dark-300 hover:text-white transition-colors"><i class="fas fa-history w-5 text-center mr-3"></i>交易历史</a>
+        </nav>
+
+        <div class="p-4 border-t border-dark-200">
+            <button class="w-full bg-dark-200 hover:bg-dark-100 text-white py-2 rounded-lg flex items-center justify-center"><i class="fas fa-question-circle mr-2"></i>帮助中心</button>
+        </div>
+    </aside>
+
+    <!-- 主区域 -->
+    <main class="flex-1 ml-64 flex flex-col">
+        <!-- 页面容器 -->
+        <!-- 1. 股票市场 -->
+        <div id="page-market" class="flex-1 overflow-y-auto p-6">
+            <!-- 股票信息 -->
+            <div class="bg-dark-400 rounded-xl p-6 mb-6">
+                <div class="flex flex-wrap items-center justify-between">
+                    <div>
+                        <div class="flex items-center">
+                            <h1 class="text-2xl font-bold mr-3" id="stockName">腾讯控股</h1>
+                            <span class="text-info" id="stockCode">00700.HK</span>
+                            <span class="ml-3 bg-success/20 text-success text-xs px-2 py-0.5 rounded-full" id="stockChangePercent">+2.45%</span>
+                        </div>
+                        <div class="mt-2 flex items-center">
+                            <span class="text-3xl font-bold" id="stockPrice">¥328.50</span>
+                            <span class="ml-3 text-success" id="stockChange">+7.95</span>
+                            <span class="ml-2 text-info" id="updateTime">今日 09:30:00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                    <div class="bg-dark-300 p-4 rounded-lg"><div class="text-info text-sm">今开</div><div class="text-lg font-medium" id="stockOpen">¥321.50</div></div>
+                    <div class="bg-dark-300 p-4 rounded-lg"><div class="text-info text-sm">昨闭</div><div class="text-lg font-medium" id="stockPrevClose">¥320.55</div></div>
+                    <div class="bg-dark-300 p-4 rounded-lg"><div class="text-info text-sm">最高</div><div class="text-lg font-medium text-success" id="stockHigh">¥329.80</div></div>
+                    <div class="bg-dark-300 p-4 rounded-lg"><div class="text-info text-sm">最低</div><div class="text-lg font-medium text-danger" id="stockLow">¥319.20</div></div>
+                    <div class="bg-dark-300 p-4 rounded-lg"><div class="text-info text-sm">成交量</div><div class="text-lg font-medium" id="stockVolume">23.45M</div></div>
+                </div>
+            </div>
+
+            <!-- 图表+交易 -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-dark-400 rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-semibold">价格走势</h2>
+                        <button class="bg-primary text-white px-3 py-1 rounded-md text-sm">日</button>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="stockChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-dark-400 rounded-xl p-6">
+                    <h2 class="text-xl font-semibold mb-4">快速交易</h2>
+
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <button id="btn-buy" class="bg-success/20 text-success py-2 rounded-lg border border-success/30">买入</button>
+                        <button id="btn-sell" class="bg-dark-300 text-white py-2 rounded-lg border border-dark-200">卖出</button>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="block text-info mb-1">交易价格</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2">¥</span>
+                            <input id="trade-price" type="number" value="328.50" step="0.01" class="bg-dark-300 border border-dark-200 rounded-lg py-2 pl-8 pr-4 w-full">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="block text-info mb-1">交易数量</label>
+                        <input id="trade-qty" type="number" placeholder="请输入数量" class="bg-dark-300 border border-dark-200 rounded-lg py-2 px-4 w-full">
+                        <div class="flex justify-between text-sm mt-1">
+                            <span>可用资金: ¥42,315.68</span>
+                            <span id="affordable">可买: 128股</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-info mb-1">订单金额</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2">¥</span>
+                            <input id="trade-amount" type="number" placeholder="0.00" readonly class="bg-dark-300 border border-dark-200 rounded-lg py-2 pl-8 pr-4 w-full">
+                        </div>
+                    </div>
+
+                    <button id="btn-confirm" class="w-full bg-success hover:bg-success/90 text-white py-3 rounded-lg font-medium">确认买入</button>
+                </div>
+            </div>
+
+            <!-- 相关股票 -->
+            <div class="bg-dark-400 rounded-xl p-6 mt-6">
+                <h2 class="text-xl font-semibold mb-4">相关股票</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="relatedStocks"></div>
+            </div>
+        </div>
+
+        <!-- 2. 我的资产 -->
+        <div id="page-assets" class="flex-1 overflow-y-auto p-6 hidden">
+            <div class="bg-dark-400 rounded-xl p-6 mb-6 shadow-lg">
+                <h2 class="text-xl font-semibold mb-6">资产概览</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="bg-dark-300 p-4 rounded-lg"><div class="text-info text-sm">总资产</div><div class="text-2xl font-bold">¥128,560.42</div><div class="text-success text-sm mt-1">+2.45%</div></div>
+                    <div class="bg-dark-300 p-4 rounded-lg"><div class="text-info text-sm">股票价值</div><div class="text-2xl font-bold">¥86,244.74</div><div class="text-success text-sm mt-1">+3.12%</div></div>
+                    <div class="bg-dark-300 p-4 rounded-lg"><div class="text-info text-sm">债券价值</div><div class="text-2xl font-bold">¥15,000.00</div><div class="text-success text-sm mt-1">+0.87%</div></div>
+                    <div class="bg-dark-300 p-4 rounded-lg"><div class="text-info text-sm">可用现金</div><div class="text-2xl font-bold">¥42,315.68</div></div>
+                </div>
+            </div>
+
+            <div class="bg-dark-400 rounded-xl p-6 mb-6 shadow-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold">我的股票</h2>
+                    <button class="bg-dark-300 hover:bg-dark-200 text-white px-3 py-1 rounded-md text-sm transition-colors"><i class="fas fa-download mr-1"></i>导出</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-dark-200">
+                        <thead>
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">代码</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">数量</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">成本价</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">当前价</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">盈亏</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-dark-200">
+                        <tr class="hover:bg-dark-300 transition-colors"><td class="px-6 py-4 whitespace-nowrap text-sm">00700.HK</td><td class="px-6 py-4 whitespace-nowrap text-sm">200</td><td class="px-6 py-4 whitespace-nowrap text-sm">¥318.55</td><td class="px-6 py-4 whitespace-nowrap text-sm">¥328.50</td><td class="px-6 py-4 whitespace-nowrap text-sm text-success">+¥1,990.00 (+3.12%)</td></tr>
+                        <tr class="hover:bg-dark-300 transition-colors"><td class="px-6 py-4 whitespace-nowrap text-sm">BABA.US</td><td class="px-6 py-4 whitespace-nowrap text-sm">100</td><td class="px-6 py-4 whitespace-nowrap text-sm">¥87.50</td><td class="px-6 py-4 whitespace-nowrap text-sm">¥89.65</td><td class="px-6 py-4 whitespace-nowrap text-sm text-success">+¥215.00 (+2.46%)</td></tr>
+                        <tr class="hover:bg-dark-300 transition-colors"><td class="px-6 py-4 whitespace-nowrap text-sm">03690.HK</td><td class="px-6 py-4 whitespace-nowrap text-sm">150</td><td class="px-6 py-4 whitespace-nowrap text-sm">¥152.30</td><td class="px-6 py-4 whitespace-nowrap text-sm">¥156.30</td><td class="px-6 py-4 whitespace-nowrap text-sm text-success">+¥600.00 (+2.60%)</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-dark-400 rounded-xl p-6 shadow-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold">我的债券</h2>
+                    <button class="bg-dark-300 hover:bg-dark-200 text-white px-3 py-1 rounded-md text-sm transition-colors"><i class="fas fa-download mr-1"></i>导出</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-dark-200">
+                        <thead>
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">代码</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">数量</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">面值</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">当前价</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">利率</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">到期日</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-dark-200">
+                        <tr class="hover:bg-dark-300 transition-colors"><td class="px-6 py-4 whitespace-nowrap text-sm">202501</td><td class="px-6 py-4 whitespace-nowrap text-sm">100</td><td class="px-6 py-4 whitespace-nowrap text-sm">¥1,000.00</td><td class="px-6 py-4 whitespace-nowrap text-sm">¥1,008.75</td><td class="px-6 py-4 whitespace-nowrap text-sm">3.25%</td><td class="px-6 py-4 whitespace-nowrap text-sm">2025-12-31</td></tr>
+                        <tr class="hover:bg-dark-300 transition-colors"><td class="px-6 py-4 whitespace-nowrap text-sm">202502</td><td class="px-6 py-4 whitespace-nowrap text-sm">50</td><td class="px-6 py-4 whitespace-nowrap text-sm">¥1,000.00</td><td class="px-6 py-4 whitespace-nowrap text-sm">¥995.60</td><td class="px-6 py-4 whitespace-nowrap text-sm">4.50%</td><td class="px-6 py-4 whitespace-nowrap text-sm">2026-06-30</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. 交易历史 -->
+        <div id="page-history" class="flex-1 overflow-y-auto p-6 hidden">
+            <div class="bg-dark-400 rounded-xl p-6 shadow-lg">
+                <div class="flex flex-wrap justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold">交易历史</h2>
+                    <button class="bg-dark-300 hover:bg-dark-200 text-white px-3 py-2 rounded-lg text-sm transition-colors"><i class="fas fa-download mr-1"></i>导出</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-dark-200">
+                        <thead>
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">交易ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">代码</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">类型</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">价格</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">数量</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">金额</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-info uppercase">时间</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-dark-200"  id="page-history-tbody">
+                        <tr class="hover:bg-dark-300 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">#TRX-20250729-001</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">00700.HK</td>
+                            <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium bg-success/20 text-success rounded-full">买入</span></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">¥318.55</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">200</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">¥63,710.00</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">2025-07-29 09:15:30</td>
+                        </tr>
+                        <tr class="hover:bg-dark-300 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">#TRX-20250728-002</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">BABA.US</td>
+                            <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium bg-success/20 text-success rounded-full">买入</span></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">¥87.50</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">100</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">¥8,750.00</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">2025-07-28 14:30:15</td>
+                        </tr>
+                        <tr class="hover:bg-dark-300 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">#TRX-20250727-003</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">03690.HK</td>
+                            <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium bg-success/20 text-success rounded-full">买入</span></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">¥152.30</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">150</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">¥22,845.00</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">2025-07-27 10:45:22</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- 分页 -->
+                <div class="flex items-center justify-between mt-6">
+                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div><p class="text-sm text-info">显示第 <span class="font-medium">1</span> 到 <span class="font-medium">4</span> 条，共 <span class="font-medium">12</span> 条记录</p></div>
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                                <button class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-dark-200 bg-dark-300 text-sm text-info hover:bg-dark-200"><i class="fas fa-chevron-left text-xs"></i></button>
+                                <button class="z-10 bg-primary border-primary text-white relative inline-flex items-center px-4 py-2 border text-sm">1</button>
+                                <button class="bg-dark-300 border-dark-200 text-info hover:bg-dark-200 relative inline-flex items-center px-4 py-2 border text-sm">2</button>
+                                <button class="bg-dark-300 border-dark-200 text-info hover:bg-dark-200 relative inline-flex items-center px-4 py-2 border text-sm">3</button>
+                                <span class="relative inline-flex items-center px-4 py-2 border border-dark-200 bg-dark-300 text-sm text-info">...</span>
+                                <button class="bg-dark-300 border-dark-200 text-info hover:bg-dark-200 relative inline-flex items-center px-4 py-2 border text-sm">5</button>
+                                <button class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-dark-200 bg-dark-300 text-sm text-info hover:bg-dark-200"><i class="fas fa-chevron-right text-xs"></i></button>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 交易确认模态框 -->
+    <div id="confirmModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center">
+        <div class="bg-dark-400 rounded-xl p-6 w-full max-w-md border border-dark-200">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold" id="modalTitle">确认买入</h3>
+                <button id="closeModal" class="text-info hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4 mb-6">
+                <div class="flex justify-between">
+                    <span class="text-info">股票名称</span>
+                    <span id="modalStockName">腾讯控股</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-info">股票代码</span>
+                    <span id="modalStockCode">00700.HK</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-info">交易类型</span>
+                    <span id="modalTradeType">买入</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-info">交易价格</span>
+                    <span id="modalPrice">¥328.50</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-info">交易数量</span>
+                    <span id="modalQty">100</span>
+                </div>
+                <div class="pt-4 border-t border-dark-200 flex justify-between">
+                    <span class="font-medium">总金额</span>
+                    <span class="font-bold text-lg" id="modalTotal">¥32,850.00</span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <button id="cancelTrade" class="bg-dark-300 hover:bg-dark-200 text-white py-2 rounded-lg">取消</button>
+                <button id="confirmTrade" class="bg-success hover:bg-success/90 text-white py-2 rounded-lg">确认交易</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+         // 从后端拉取交易历史
+         async function fetchHistory() {
+            try {
+            const res = await axios.get('http://localhost:3000/api/portfolio/pf');
+            // 如果后端返回 {data:[...]} 结构
+            return res.data.data || res.data;
+            } catch (e) {
+            console.error('获取交易历史失败', e);
+            return [];
+            }
+        }
+        function renderHistory(list) {
+            const tbody = document.getElementById('page-history-tbody');
+            tbody.innerHTML = list.map(h => `
+                <tr class="hover:bg-dark-300 transition-colors">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">${h.id}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">${h.symbol}</td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 py-1 text-xs font-medium ${h.type==='buy'?'bg-success/20 text-success':'bg-danger/20 text-danger'} rounded-full">${h.type}</span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">¥${Number(h.rmb_amount).toFixed(2)}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">${h.quantity}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">¥${Number(h.amount).toFixed(2)}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">${h.trade_date}</td>
+                </tr>
+            `).join('');
+          }
+        /* ---------- 入口：DOM 加载后调用 ---------- */
+        document.addEventListener('DOMContentLoaded', async () => {
+            /* 以下原有代码保持不变 … */
+            show('page-market');                       // ← 已有
+            /* 新增 ↓ */
+            const historyData = await fetchHistory();
+            renderHistory(historyData);
+        });
+        /* ---------- 数据 ---------- */
+        const stockData = {
+            '00700.HK': { name: '腾讯控股', price: 328.50, change: 7.95, changePercent: 2.45, open: 321.50, prevClose: 320.55, high: 329.80, low: 319.20, volume: '23.45M' },
+            'BABA.US': { name: '阿里巴巴', price: 89.65, change: 1.11, changePercent: 1.25, open: 88.70, prevClose: 88.54, high: 89.80, low: 88.40, volume: '15.23M' },
+            '03690.HK': { name: '美团', price: 156.30, change: 1.35, changePercent: 0.87, open: 155.10, prevClose: 154.95, high: 156.80, low: 154.70, volume: '18.76M' },
+            'BIDU.US': { name: '百度', price: 132.45, change: -0.56, changePercent: -0.42, open: 132.80, prevClose: 133.01, high: 133.20, low: 132.10, volume: '8.45M' },
+            '01810.HK': { name: '小米集团', price: 24.85, change: 0.43, changePercent: 1.76, open: 24.50, prevClose: 24.42, high: 24.90, low: 24.35, volume: '32.67M' }
+        };
+
+        /* ---------- 图表 ---------- */
+        let chart;
+        function drawChart(code = '00700.HK') {
+            const info = stockData[code];
+            const base = info.prevClose;
+            const labels = [];
+            const data = [];
+            for (let i = 0; i < 18; i++) {
+                const h = 9 + Math.floor(i / 2);
+                const m = i % 2 ? '30' : '00';
+                labels.push(`${h}:${m}`);
+                const price = base + (info.change >= 0 ? 1 : -1) * i * 0.3 + (Math.random() - 0.5) * 5;
+                data.push(price.toFixed(2));
+            }
+            if (chart) chart.destroy();
+            chart = new Chart(document.getElementById('stockChart'), {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: `${info.name} (${code})`,
+                        data,
+                        borderColor: info.change >= 0 ? '#00B42A' : '#F53F3F',
+                        backgroundColor: info.change >= 0 ? 'rgba(0,180,42,.1)' : 'rgba(245,63,63,.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#86909C' } },
+                        y: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#86909C' } }
+                    },
+                    plugins: { legend: { labels: { color: '#fff' } } }
+                }
+            });
+        }
+
+        /* ---------- 页面切换 ---------- */
+        function show(pageId) {
+            ['page-market', 'page-assets', 'page-history'].forEach(p => document.getElementById(p).classList.toggle('hidden', p !== pageId));
+            ['nav-market', 'nav-assets', 'nav-history'].forEach(n => {
+                const el = document.getElementById(n);
+                const active = el.id === 'nav-' + pageId.split('-')[1];
+                el.classList.toggle('text-primary', active);
+                el.classList.toggle('bg-dark-300', active);
+                el.classList.toggle('border-r-4', active);
+                el.classList.toggle('border-primary', active);
+                el.classList.toggle('text-gray-400', !active);
+            });
+            if (pageId === 'page-market') setTimeout(drawChart, 50);
+        }
+
+        /* ---------- 交互 ---------- */
+        // 全局变量存储当前交易类型（买入/卖出）
+        let currentTradeType = 'buy';
+
+        // 交易
+        function setTradeType(type) {
+            currentTradeType = type; // 记录当前交易类型
+            const isBuy = type === 'buy';
+            document.getElementById('btn-buy').className = isBuy ? 'bg-success/20 text-success py-2 rounded-lg border border-success/30' : 'bg-dark-300 text-white py-2 rounded-lg border border-dark-200';
+            document.getElementById('btn-sell').className = !isBuy ? 'bg-danger/20 text-danger py-2 rounded-lg border border-danger/30' : 'bg-dark-300 text-white py-2 rounded-lg border border-dark-200';
+            document.getElementById('btn-confirm').textContent = isBuy ? '确认买入' : '确认卖出';
+            document.getElementById('btn-confirm').className = `w-full ${isBuy ? 'bg-success' : 'bg-danger'} hover:${isBuy ? 'bg-success/90' : 'bg-danger/90'} text-white py-3 rounded-lg font-medium`;
+        }
+        
+        function calcAmount() {
+            const price = +document.getElementById('trade-price').value || 0;
+            const qty = +document.getElementById('trade-qty').value || 0;
+            document.getElementById('trade-amount').value = (price * qty).toFixed(2);
+            const funds = 42315.68;
+            document.getElementById('affordable').textContent = `可买: ${Math.floor(funds / price)}股`;
+        }
+        
+        function loadStock(code) {
+            const info = stockData[code];
+            Object.keys(info).forEach(k => {
+                const el = document.getElementById('stock' + k.charAt(0).toUpperCase() + k.slice(1));
+                if (el) el.textContent = typeof info[k] === 'number' ? `¥${info[k].toFixed(2)}` : info[k];
+            });
+            ['stockChange', 'stockChangePercent'].forEach(id => {
+                const el = document.getElementById(id);
+                el.className = info.change >= 0 ? el.className.replace('danger', 'success') : el.className.replace('success', 'danger');
+            });
+            document.getElementById('trade-price').value = info.price.toFixed(2);
+            document.querySelectorAll('#relatedStocks > div').forEach(d => d.classList.remove('border-l-4', 'border-primary', 'bg-primary/10'));
+            document.querySelector(`[data-code="${code}"]`)?.classList.add('border-l-4', 'border-primary', 'bg-primary/10');
+            drawChart(code);
+            calcAmount();
+        }
+
+        // 显示确认模态框
+        function showConfirmModal() {
+            // 验证交易数量
+            const qty = +document.getElementById('trade-qty').value || 0;
+            if (qty <= 0) {
+                alert('请输入有效的交易数量');
+                return;
+            }
+
+            // 获取当前股票信息
+            const stockCode = document.getElementById('stockCode').textContent;
+            const stockName = document.getElementById('stockName').textContent;
+            const price = +document.getElementById('trade-price').value || 0;
+            const total = (price * qty).toFixed(2);
+
+            // 填充模态框数据
+            document.getElementById('modalTitle').textContent = currentTradeType === 'buy' ? '确认买入' : '确认卖出';
+            document.getElementById('modalStockName').textContent = stockName;
+            document.getElementById('modalStockCode').textContent = stockCode;
+            document.getElementById('modalTradeType').textContent = currentTradeType === 'buy' ? '买入' : '卖出';
+            document.getElementById('modalPrice').textContent = `¥${price.toFixed(2)}`;
+            document.getElementById('modalQty').textContent = qty;
+            document.getElementById('modalTotal').textContent = `¥${total}`;
+            document.getElementById('modalTotal').className = `font-bold text-lg ${currentTradeType === 'buy' ? 'text-success' : 'text-danger'}`;
+
+            // 显示模态框
+            document.getElementById('confirmModal').classList.remove('hidden');
+            document.getElementById('confirmModal').classList.add('flex');
+        }
+
+        // 隐藏确认模态框
+        function hideConfirmModal() {
+            document.getElementById('confirmModal').classList.add('hidden');
+            document.getElementById('confirmModal').classList.remove('flex');
+        }
+
+        // 处理交易确认
+        function handleTradeConfirm() {
+            // 这里可以添加实际提交交易的逻辑（调用后端API）
+            alert('交易已确认！实际项目中这里会提交交易请求');
+            hideConfirmModal();
+            // 可以添加重置表单的逻辑
+            document.getElementById('trade-qty').value = '';
+            document.getElementById('trade-amount').value = '0.00';
+        }
+
+        /* ---------- 初始化 ---------- */
+        document.addEventListener('DOMContentLoaded', () => {
+            // 导航事件
+            ['nav-market', 'nav-assets', 'nav-history'].forEach(n => {
+                document.getElementById(n).addEventListener('click', e => {
+                    e.preventDefault();
+                    show(n.replace('nav-', 'page-'));
+                });
+            });
+            
+            // 交易类型切换
+            document.getElementById('btn-buy').addEventListener('click', () => setTradeType('buy'));
+            document.getElementById('btn-sell').addEventListener('click', () => setTradeType('sell'));
+            
+            // 价格和数量输入事件
+            document.getElementById('trade-price').addEventListener('input', calcAmount);
+            document.getElementById('trade-qty').addEventListener('input', calcAmount);
+            
+            // 确认按钮点击事件
+            document.getElementById('btn-confirm').addEventListener('click', showConfirmModal);
+            
+            // 模态框事件
+            document.getElementById('closeModal').addEventListener('click', hideConfirmModal);
+            document.getElementById('cancelTrade').addEventListener('click', hideConfirmModal);
+            document.getElementById('confirmTrade').addEventListener('click', handleTradeConfirm);
+            
+            // 点击模态框外部关闭
+            document.getElementById('confirmModal').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('confirmModal')) {
+                    hideConfirmModal();
+                }
+            });
+            
+            // 渲染相关股票
+            const box = document.getElementById('relatedStocks');
+            Object.keys(stockData).forEach(code => {
+                const s = stockData[code];
+                const div = document.createElement('div');
+                div.dataset.code = code;
+                div.className = 'bg-dark-300 p-4 rounded-lg card-hover cursor-pointer';
+                div.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div><h3 class="font-medium">${s.name}</h3><p class="text-info text-sm">${code}</p></div>
+                        <div class="text-right">
+                            <p class="font-medium">¥${s.price.toFixed(2)}</p>
+                            <p class="${s.change >= 0 ? 'text-success' : 'text-danger'} text-sm">${s.change >= 0 ? '+' : ''}${s.changePercent.toFixed(2)}%</p>
+                        </div>
+                    </div>`;
+                div.onclick = () => loadStock(code);
+                box.appendChild(div);
+            });
+            
+            show('page-market');
+        });
+    </script>
+</body>
+</html>
