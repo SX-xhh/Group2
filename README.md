@@ -39,12 +39,12 @@ npm install
 Start the server:
 node server.js
 ## API
-+ http://localhost:3000/api/portfolio/stock/:symbol
-+ http://localhost:3000/api/portfolio/:symbol
-+ http://localhost:3000/api/portfolio/handle
-+ http://localhost:3000/api/portfolio/pf
-+ http://localhost:3000/api/portfolio/pf/:id
-+ http://localhost:3000/api/portfolio/myAssets
++ Check current stock information  http://localhost:3000/api/portfolio/stock/:symbol
++ Check stock trend data http://localhost:3000/api/portfolio/:symbol
++ Buy and sell stocks http://localhost:3000/api/portfolio/handle
++ Check history records http://localhost:3000/api/portfolio/pf
++ Delete history records http://localhost:3000/api/portfolio/pf/:id
++ Check my assets http://localhost:3000/api/portfolio/myAssets
 
 ## Usage Instructions
 + Login and Navigation: After opening the page, users can see the sidebar navigation, including three options: Stock Market, My Assets, and Transaction History. Clicking on the corresponding navigation links can switch pages.
