@@ -38,6 +38,13 @@ Ensure that you have installed Node.js and npm. Open the terminal and navigate t
 npm install
 Start the server:
 node server.js
+## API
++ http://localhost:3000/api/portfolio/stock/:symbol
++ http://localhost:3000/api/portfolio/:symbol
++ http://localhost:3000/api/portfolio/handle
++ http://localhost:3000/api/portfolio/pf
++ http://localhost:3000/api/portfolio/pf/:id
++ http://localhost:3000/api/portfolio/myAssets
 
 ## Usage Instructions
 + Login and Navigation: After opening the page, users can see the sidebar navigation, including three options: Stock Market, My Assets, and Transaction History. Clicking on the corresponding navigation links can switch pages.
