@@ -23,7 +23,7 @@ Obtains daily stock data. Two tables are created: stock_daily and portfolio.
 + Tailwind CSS: Used to quickly build responsive and beautiful user interfaces.
 + Axios: Used to send HTTP requests and interact with the back-end for data exchange.
 + Chart.js: Used to draw stock price trend charts.
-### 后端
+### Back-end
 + Node.js: Serves as the server-side runtime environment.
 + JavaScript: Handles data requests and business logic.
 + MySQL: Uses MySQL database to store stock information, asset information, and transaction history records.
